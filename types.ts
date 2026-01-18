@@ -12,6 +12,7 @@ export interface Meal {
   };
   imageUrl?: string;
   insight?: string;
+  createdAt?: string; // ISO 日期字符串，用于历史记录筛选
 }
 
 export interface UserStats {

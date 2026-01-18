@@ -13,7 +13,7 @@ type Period = 'week' | 'month';
 const Reports: React.FC<ReportsProps> = ({ meals, stats, setView }) => {
     const [period, setPeriod] = useState<Period>('week');
 
-    // 模拟过去几天的数据（实际应用中应该基于历史记录）
+    // 根据真实餐食数据生成图表数据
     const chartData = useMemo(() => {
         const days = period === 'week' ? 7 : 30;
         const data = [];
@@ -22,33 +22,48 @@ const Reports: React.FC<ReportsProps> = ({ meals, stats, setView }) => {
         for (let i = days - 1; i >= 0; i--) {
             const date = new Date(today);
             date.setDate(today.getDate() - i);
+            const dateStr = date.toISOString().split('T')[0];
 
-            // 模拟数据：今天用真实数据，其他天用随机数据
-            const isToday = i === 0;
-            const calories = isToday
-                ? stats.consumed
-                : Math.floor(1200 + Math.random() * 800);
+            // 根据 createdAt 筛选当天的餐食
+            const dayMeals = meals.filter(meal => {
+                if (meal.createdAt) {
+                    return meal.createdAt === dateStr;
+                }
+                // 没有 createdAt 的餐食，假定是今天的
+                const todayStr = new Date().toISOString().split('T')[0];
+                return dateStr === todayStr;
+            });
+
+            // 计算当天总卡路里
+            const calories = dayMeals.reduce((sum, meal) => sum + meal.calories, 0);
 
             data.push({
                 date,
                 calories,
+                hasMeals: dayMeals.length > 0,
                 label: period === 'week'
                     ? ['日', '一', '二', '三', '四', '五', '六'][date.getDay()]
                     : date.getDate().toString(),
             });
         }
         return data;
-    }, [period, stats.consumed]);
+    }, [period, meals]);
 
-    // 计算统计数据
+    // 计算统计数据（只计算有记录的天数）
     const statistics = useMemo(() => {
-        const calories = chartData.map(d => d.calories);
+        const daysWithMeals = chartData.filter(d => d.hasMeals && d.calories > 0);
+        const calories = daysWithMeals.map(d => d.calories);
+
+        if (calories.length === 0) {
+            return { avg: 0, max: 0, min: 0, goalReachedDays: 0, totalDays: chartData.length, recordedDays: 0 };
+        }
+
         const avg = Math.round(calories.reduce((a, b) => a + b, 0) / calories.length);
         const max = Math.max(...calories);
         const min = Math.min(...calories);
         const goalReachedDays = calories.filter(c => c >= stats.dailyGoal * 0.9 && c <= stats.dailyGoal * 1.1).length;
 
-        return { avg, max, min, goalReachedDays, totalDays: chartData.length };
+        return { avg, max, min, goalReachedDays, totalDays: chartData.length, recordedDays: calories.length };
     }, [chartData, stats.dailyGoal]);
 
     // 计算营养素分布
@@ -81,8 +96,8 @@ const Reports: React.FC<ReportsProps> = ({ meals, stats, setView }) => {
                     <button
                         onClick={() => setPeriod('week')}
                         className={`flex-1 py-2.5 rounded-xl font-bold text-sm transition-all ${period === 'week'
-                                ? 'bg-white text-text-main shadow-soft'
-                                : 'text-text-muted hover:text-text-main'
+                            ? 'bg-white text-text-main shadow-soft'
+                            : 'text-text-muted hover:text-text-main'
                             }`}
                     >
                         周报
@@ -90,8 +105,8 @@ const Reports: React.FC<ReportsProps> = ({ meals, stats, setView }) => {
                     <button
                         onClick={() => setPeriod('month')}
                         className={`flex-1 py-2.5 rounded-xl font-bold text-sm transition-all ${period === 'month'
-                                ? 'bg-white text-text-main shadow-soft'
-                                : 'text-text-muted hover:text-text-main'
+                            ? 'bg-white text-text-main shadow-soft'
+                            : 'text-text-muted hover:text-text-main'
                             }`}
                     >
                         月报
@@ -128,14 +143,16 @@ const Reports: React.FC<ReportsProps> = ({ meals, stats, setView }) => {
 
                         <div className="flex items-end justify-between h-full gap-1">
                             {chartData.slice(period === 'week' ? 0 : -14).map((day, idx) => {
-                                const height = (day.calories / maxCalories) * 100;
+                                const height = day.calories > 0 ? (day.calories / maxCalories) * 100 : 0;
                                 const isAboveGoal = day.calories > stats.dailyGoal;
+                                const hasData = day.hasMeals && day.calories > 0;
                                 return (
                                     <div key={idx} className="flex-1 flex flex-col items-center gap-1">
                                         <div
-                                            className={`w-full rounded-t-lg transition-all ${isAboveGoal ? 'bg-red-300' : 'bg-primary'
+                                            className={`w-full rounded-t-lg transition-all ${!hasData ? 'bg-gray-100' :
+                                                    isAboveGoal ? 'bg-red-300' : 'bg-primary'
                                                 }`}
-                                            style={{ height: `${height}%`, minHeight: '4px' }}
+                                            style={{ height: `${Math.max(height, hasData ? 4 : 2)}%`, minHeight: hasData ? '4px' : '2px' }}
                                         ></div>
                                         <span className="text-[10px] text-text-muted">{day.label}</span>
                                     </div>
@@ -219,7 +236,7 @@ const Reports: React.FC<ReportsProps> = ({ meals, stats, setView }) => {
                         <StatCard
                             icon="check_circle"
                             label="达标天数"
-                            value={`${statistics.goalReachedDays}/${statistics.totalDays}`}
+                            value={`${statistics.goalReachedDays}/${statistics.recordedDays || statistics.totalDays}`}
                             unit="天"
                             color="text-green-500"
                             bg="bg-green-50"
@@ -236,11 +253,13 @@ const Reports: React.FC<ReportsProps> = ({ meals, stats, setView }) => {
                         <div>
                             <h4 className="font-bold text-text-main mb-1">健康洞察</h4>
                             <p className="text-sm text-text-muted leading-relaxed">
-                                {statistics.avg > stats.dailyGoal
-                                    ? `你的平均摄入高于目标 ${statistics.avg - stats.dailyGoal} kcal，建议适当控制饮食量。`
-                                    : statistics.avg < stats.dailyGoal * 0.8
-                                        ? `你的平均摄入偏低，建议增加营养摄入以保持健康。`
-                                        : `做得棒！你的饮食控制得很好，继续保持！ 🎉`}
+                                {statistics.recordedDays === 0
+                                    ? '开始记录你的饮食吧！拍照输入食物即可获取营养分析。📸'
+                                    : statistics.avg > stats.dailyGoal
+                                        ? `你的平均摄入高于目标 ${statistics.avg - stats.dailyGoal} kcal，建议适当控制饮食量。`
+                                        : statistics.avg < stats.dailyGoal * 0.8
+                                            ? `你的平均摄入偏低，建议增加营养摄入以保持健康。`
+                                            : `做得棒！你的饮食控制得很好，继续保持！ 🎉`}
                             </p>
                         </div>
                     </div>

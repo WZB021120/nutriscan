@@ -6,26 +6,42 @@ interface DashboardProps {
   stats: UserStats;
   meals: Meal[];
   setView: (view: View) => void;
+  userProfile?: { nickname: string; avatarUrl: string };
+  isLoggedIn?: boolean;
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ stats, meals, setView }) => {
+const Dashboard: React.FC<DashboardProps> = ({ stats, meals, setView, userProfile, isLoggedIn }) => {
   const caloriesRemaining = stats.dailyGoal - stats.consumed;
   const progressPercent = Math.min(100, (stats.consumed / stats.dailyGoal) * 100);
   const circumference = 502; // 2 * pi * 80
   const strokeDashoffset = circumference - (progressPercent / 100) * circumference;
+
+  // 根据时间获取问候语
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour >= 5 && hour < 12) return '早上好';
+    if (hour >= 12 && hour < 18) return '下午好';
+    return '晚上好';
+  };
+
+  // 动态显示用户名
+  const displayName = isLoggedIn && userProfile?.nickname ? userProfile.nickname : '用户';
+  const displayAvatar = userProfile?.avatarUrl
+    ? userProfile.avatarUrl
+    : 'https://ui-avatars.com/api/?name=' + encodeURIComponent(displayName) + '&background=9eb7a5&color=fff&size=200';
 
   return (
     <div className="relative flex flex-col min-h-screen bg-white pb-28">
       {/* Header */}
       <header className="flex items-center justify-between px-6 pt-10 pb-4 bg-white sticky top-0 z-10 bg-opacity-95 backdrop-blur-sm">
         <div className="flex items-center gap-3" onClick={() => setView('profile')}>
-          <div 
-            className="h-10 w-10 shrink-0 overflow-hidden rounded-full border border-gray-100 bg-cover bg-center cursor-pointer" 
-            style={{ backgroundImage: `url('https://lh3.googleusercontent.com/aida-public/AB6AXuDDOCeFchJ9lRvRltI9tMGgKewqiza7AKW0HJ92oSURkGtsWb3TQXdChVTp6uBFIe2l2zN6Y8JpH4QjPKwUvVfdFAdvDHVGIcDxk6FjVbDMb2s6LIZaVBKeNuKqYSs-7cPXLhX7iH0mPcTQUXsiVLiDDy1kBiPWQxnk6Uaka9nUO1keN5G4IHf1qE9q455s81-Ww80F8ZkGONyyCVwT81SCl_7-aCrAgeZqnCT9H5HqoiqoeIxte_G6hD9UC7JMcXR0iGwzL-EDWE8')` }}
+          <div
+            className="h-10 w-10 shrink-0 overflow-hidden rounded-full border border-gray-100 bg-cover bg-center cursor-pointer"
+            style={{ backgroundImage: `url('${displayAvatar}')` }}
           />
           <div className="flex flex-col cursor-pointer">
             <span className="text-xs font-medium text-text-muted">今天, {new Date().toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' })}</span>
-            <h1 className="text-lg font-bold leading-tight text-text-main">早上好, Sarah</h1>
+            <h1 className="text-lg font-bold leading-tight text-text-main">{getGreeting()}, {displayName}</h1>
           </div>
         </div>
         <button className="h-10 w-10 flex items-center justify-center rounded-full bg-surface-light hover:bg-gray-100 transition active:scale-95">
@@ -50,12 +66,12 @@ const Dashboard: React.FC<DashboardProps> = ({ stats, meals, setView }) => {
               {/* Background Circle */}
               <circle cx="100" cy="100" fill="none" r="80" stroke="#f2f2f2" strokeWidth="12" strokeLinecap="round" />
               {/* Progress Circle */}
-              <circle 
-                cx="100" cy="100" 
-                fill="none" r="80" 
-                stroke={caloriesRemaining < 0 ? '#ef4444' : '#9eb7a5'} 
-                strokeWidth="12" 
-                strokeLinecap="round" 
+              <circle
+                cx="100" cy="100"
+                fill="none" r="80"
+                stroke={caloriesRemaining < 0 ? '#ef4444' : '#9eb7a5'}
+                strokeWidth="12"
+                strokeLinecap="round"
                 strokeDasharray={circumference}
                 strokeDashoffset={strokeDashoffset}
                 className="transition-all duration-1000 ease-out"
@@ -82,8 +98,8 @@ const Dashboard: React.FC<DashboardProps> = ({ stats, meals, setView }) => {
                 </div>
                 <div>
                   <div className="flex items-baseline gap-1">
-                     <p className="text-2xl font-extrabold text-text-main">{Math.round(macro.value)}</p>
-                     <p className="text-xs font-semibold text-text-muted">g</p>
+                    <p className="text-2xl font-extrabold text-text-main">{Math.round(macro.value)}</p>
+                    <p className="text-xs font-semibold text-text-muted">g</p>
                   </div>
                   <p className="text-[10px] text-text-muted mt-0.5 font-medium opacity-70">目标 {macro.goal}g</p>
                 </div>
@@ -103,10 +119,10 @@ const Dashboard: React.FC<DashboardProps> = ({ stats, meals, setView }) => {
           </div>
           <div className="flex flex-col gap-3 pb-4">
             {meals.length === 0 ? (
-               <div className="text-center py-8 text-gray-400 bg-surface-light rounded-2xl border border-dashed border-gray-200">
-                  <span className="material-symbols-outlined text-4xl mb-2 opacity-50">no_food</span>
-                  <p className="text-sm">今天还没有记录哦</p>
-               </div>
+              <div className="text-center py-8 text-gray-400 bg-surface-light rounded-2xl border border-dashed border-gray-200">
+                <span className="material-symbols-outlined text-4xl mb-2 opacity-50">no_food</span>
+                <p className="text-sm">今天还没有记录哦</p>
+              </div>
             ) : meals.map((meal) => (
               <div key={meal.id} className="group flex items-center p-3 gap-4 rounded-2xl bg-surface-light shadow-soft border border-transparent transition-all hover:shadow-md hover:border-gray-100 active:scale-[0.99]">
                 <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-2xl bg-gray-100 shadow-sm">

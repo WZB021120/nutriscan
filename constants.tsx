@@ -21,7 +21,8 @@ export const MOCK_MEALS: Meal[] = [
     time: '8:30 AM',
     calories: 450,
     macros: { protein: 15, carbs: 65, fat: 12 },
-    imageUrl: 'https://picsum.photos/seed/oatmeal/200/200'
+    imageUrl: 'https://picsum.photos/seed/oatmeal/200/200',
+    createdAt: new Date().toISOString().split('T')[0] // 今天
   },
   {
     id: '2',
@@ -30,7 +31,8 @@ export const MOCK_MEALS: Meal[] = [
     time: '11:00 AM',
     calories: 120,
     macros: { protein: 4, carbs: 18, fat: 8 },
-    imageUrl: 'https://picsum.photos/seed/apple/200/200'
+    imageUrl: 'https://picsum.photos/seed/apple/200/200',
+    createdAt: new Date().toISOString().split('T')[0] // 今天
   },
   {
     id: '3',
@@ -39,6 +41,7 @@ export const MOCK_MEALS: Meal[] = [
     time: '1:15 PM',
     calories: 520,
     macros: { protein: 38, carbs: 12, fat: 22 },
-    imageUrl: 'https://picsum.photos/seed/salad/200/200'
+    imageUrl: 'https://picsum.photos/seed/salad/200/200',
+    createdAt: new Date().toISOString().split('T')[0] // 今天
   }
 ];

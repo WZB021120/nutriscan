@@ -6,6 +6,7 @@ interface DiaryProps {
     meals: Meal[];
     stats: UserStats;
     setView: (view: View) => void;
+    onDeleteMeal?: (mealId: string) => void;
 }
 
 // 生成最近7天的日期列表
@@ -31,16 +32,37 @@ const getWeekDay = (date: Date) => {
     return days[date.getDay()];
 };
 
-const Diary: React.FC<DiaryProps> = ({ meals, stats, setView }) => {
+const Diary: React.FC<DiaryProps> = ({ meals, stats, setView, onDeleteMeal }) => {
     const dateList = useMemo(() => generateDateList(), []);
     const [selectedDate, setSelectedDate] = useState<Date>(dateList[dateList.length - 1]); // 今天
+    const [deletingId, setDeletingId] = useState<string | null>(null);
 
-    // 过滤选中日期的餐食（简化处理：基于今天的数据模拟）
+    // 过滤选中日期的餐食
     const selectedDateStr = formatDate(selectedDate);
     const todayStr = formatDate(new Date());
 
-    // 如果是今天，显示所有餐食；否则显示空
-    const filteredMeals = selectedDateStr === todayStr ? meals : [];
+    // 根据 createdAt 筛选历史记录
+    const filteredMeals = useMemo(() => {
+        return meals.filter(meal => {
+            // 如果餐食有 createdAt 字段，使用它进行筛选
+            if (meal.createdAt) {
+                return meal.createdAt === selectedDateStr;
+            }
+            // 否则，假定没有 createdAt 的餐食是今天的
+            return selectedDateStr === todayStr;
+        });
+    }, [meals, selectedDateStr, todayStr]);
+
+    // 删除餐食
+    const handleDelete = (mealId: string) => {
+        if (onDeleteMeal && window.confirm('确定要删除这条记录吗？')) {
+            setDeletingId(mealId);
+            setTimeout(() => {
+                onDeleteMeal(mealId);
+                setDeletingId(null);
+            }, 300);
+        }
+    };
 
     // 计算当日统计
     const dailyStats = useMemo(() => {
@@ -72,8 +94,8 @@ const Diary: React.FC<DiaryProps> = ({ meals, stats, setView }) => {
                                 key={idx}
                                 onClick={() => setSelectedDate(date)}
                                 className={`flex flex-col items-center min-w-[56px] py-3 px-3 rounded-2xl transition-all ${isSelected
-                                        ? 'bg-primary text-white shadow-lg shadow-primary/30'
-                                        : 'bg-surface-light text-text-main hover:bg-gray-100'
+                                    ? 'bg-primary text-white shadow-lg shadow-primary/30'
+                                    : 'bg-surface-light text-text-main hover:bg-gray-100'
                                     }`}
                             >
                                 <span className={`text-xs font-medium ${isSelected ? 'text-white/80' : 'text-text-muted'}`}>
@@ -136,7 +158,11 @@ const Diary: React.FC<DiaryProps> = ({ meals, stats, setView }) => {
 
                         <div className="flex flex-col gap-4">
                             {filteredMeals.map((meal, idx) => (
-                                <div key={meal.id} className="flex gap-4 relative">
+                                <div
+                                    key={meal.id}
+                                    className={`flex gap-4 relative transition-all duration-300 ${deletingId === meal.id ? 'opacity-0 translate-x-10 scale-95' : 'opacity-100'
+                                        }`}
+                                >
                                     {/* Timeline dot */}
                                     <div className="relative z-10 flex-shrink-0">
                                         <div className="w-11 h-11 rounded-full bg-white border-4 border-primary/20 flex items-center justify-center shadow-sm">
@@ -147,7 +173,7 @@ const Diary: React.FC<DiaryProps> = ({ meals, stats, setView }) => {
                                     </div>
 
                                     {/* Meal Card */}
-                                    <div className="flex-1 bg-surface-light rounded-2xl p-4 shadow-soft border border-gray-50">
+                                    <div className="flex-1 bg-surface-light rounded-2xl p-4 shadow-soft border border-gray-50 group">
                                         <div className="flex gap-3">
                                             {meal.imageUrl && (
                                                 <img
@@ -175,6 +201,16 @@ const Diary: React.FC<DiaryProps> = ({ meals, stats, setView }) => {
                                                 )}
                                             </div>
                                         </div>
+                                        {/* 删除按钮 */}
+                                        {onDeleteMeal && (
+                                            <button
+                                                onClick={() => handleDelete(meal.id)}
+                                                className="mt-3 w-full py-2 text-xs font-medium text-red-500 bg-red-50 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity active:bg-red-100"
+                                            >
+                                                <span className="material-symbols-outlined text-sm align-middle mr-1">delete</span>
+                                                删除记录
+                                            </button>
+                                        )}
                                     </div>
                                 </div>
                             ))}

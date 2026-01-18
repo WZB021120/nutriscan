@@ -127,6 +127,7 @@ class MealResponse(BaseModel):
     macros: Macros
     imageUrl: Optional[str] = None
     insight: Optional[str] = None
+    createdAt: Optional[str] = None  # ISO 日期字符串
 
 class StatsUpdate(BaseModel):
     dailyGoal: Optional[int] = None
@@ -224,7 +225,7 @@ def get_meals(user: dict = Depends(verify_token)):
     c = conn.cursor()
     
     c.execute('''
-        SELECT id, name, type, time, calories, protein, carbs, fat, image_url, insight
+        SELECT id, name, type, time, calories, protein, carbs, fat, image_url, insight, created_at
         FROM meals WHERE user_id = ? ORDER BY created_at DESC
     ''', (user["id"],))
     
@@ -238,7 +239,8 @@ def get_meals(user: dict = Depends(verify_token)):
             calories=row[4],
             macros=Macros(protein=row[5], carbs=row[6], fat=row[7]),
             imageUrl=row[8],
-            insight=row[9]
+            insight=row[9],
+            createdAt=str(row[10]).split(' ')[0] if row[10] else None  # 返回日期部分
         ))
     
     conn.close()
@@ -294,7 +296,8 @@ def create_meal(meal: MealCreate, user: dict = Depends(verify_token)):
         calories=meal.calories,
         macros=meal.macros,
         imageUrl=meal.imageUrl,
-        insight=meal.insight
+        insight=meal.insight,
+        createdAt=today
     )
 
 @app.delete("/meals/{meal_id}")
