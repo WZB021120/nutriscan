@@ -1,0 +1,7 @@
+{
+  "name": "NutriScan - 智能营养助手",
+  "description": "基于 AI 的饮食追踪应用，通过拍摄照片即可轻松分析卡路里和营养成分。",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
