@@ -26,7 +26,7 @@ export interface UserStats {
   weight: number;
 }
 
-export type View = 'splash' | 'home' | 'camera' | 'analysis' | 'profile' | 'diary' | 'reports';
+export type View = 'splash' | 'home' | 'camera' | 'analysis' | 'profile' | 'diary' | 'reports' | 'login';
 
 export interface AnalysisResult {
   name: string;
