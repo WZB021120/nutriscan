@@ -224,11 +224,8 @@ const App: React.FC = () => {
             result={pendingAnalysis.result}
             imageUrl={pendingAnalysis.image}
             imageBase64={pendingAnalysis.base64}
-            onConfirm={() => addMeal(pendingAnalysis.result, pendingAnalysis.image)}
+            onConfirm={(finalResult) => addMeal(finalResult, pendingAnalysis.image)}
             onClose={() => setCurrentView('home')}
-            onResultUpdate={(newResult) => {
-              setPendingAnalysis(prev => prev ? { ...prev, result: newResult } : null);
-            }}
           />
         ) : <Dashboard stats={stats} meals={meals} setView={setCurrentView} />;
       case 'profile':

@@ -7,12 +7,11 @@ interface AnalysisProps {
   result: AnalysisResult;
   imageUrl: string;
   imageBase64?: string; // 用于修正分析
-  onConfirm: () => void;
+  onConfirm: (result: AnalysisResult) => void; // 接收最终结果
   onClose: () => void;
-  onResultUpdate?: (newResult: AnalysisResult) => void; // 更新结果回调
 }
 
-const Analysis: React.FC<AnalysisProps> = ({ result, imageUrl, imageBase64, onConfirm, onClose, onResultUpdate }) => {
+const Analysis: React.FC<AnalysisProps> = ({ result, imageUrl, imageBase64, onConfirm, onClose }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [userInput, setUserInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -33,7 +32,6 @@ const Analysis: React.FC<AnalysisProps> = ({ result, imageUrl, imageBase64, onCo
     try {
       const correctedResult = await correctFoodAnalysis(imageBase64, userInput, currentResult);
       setCurrentResult(correctedResult);
-      onResultUpdate?.(correctedResult);
       setIsEditing(false);
       setUserInput('');
     } catch (err) {
@@ -175,7 +173,7 @@ const Analysis: React.FC<AnalysisProps> = ({ result, imageUrl, imageBase64, onCo
 
       <div className="fixed bottom-0 left-0 w-full z-40 px-6 py-6 bg-white/80 backdrop-blur-sm flex justify-center">
         <button
-          onClick={onConfirm}
+          onClick={() => onConfirm(currentResult)}
           className="w-full max-w-md h-14 bg-primary text-white rounded-2xl font-bold text-lg shadow-float flex items-center justify-center gap-2"
         >
           <span className="material-symbols-outlined">add</span>
