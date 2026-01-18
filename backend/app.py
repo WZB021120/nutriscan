@@ -38,9 +38,19 @@ def init_db():
             username TEXT UNIQUE NOT NULL,
             password_hash TEXT NOT NULL,
             token TEXT,
+            nickname TEXT,
+            avatar_url TEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     ''')
+    
+    # 检查是否需要迁移（添加 nickname 和 avatar_url 列）
+    c.execute("PRAGMA table_info(users)")
+    columns = [col[1] for col in c.fetchall()]
+    if 'nickname' not in columns:
+        c.execute("ALTER TABLE users ADD COLUMN nickname TEXT")
+    if 'avatar_url' not in columns:
+        c.execute("ALTER TABLE users ADD COLUMN avatar_url TEXT")
     
     # 餐食表
     c.execute('''
@@ -124,6 +134,10 @@ class StatsUpdate(BaseModel):
     macros: Optional[dict] = None
     streak: Optional[int] = None
     weight: Optional[float] = None
+
+class ProfileUpdate(BaseModel):
+    nickname: Optional[str] = None
+    avatarUrl: Optional[str] = None
 
 # 工具函数
 def hash_password(password: str) -> str:
@@ -370,6 +384,48 @@ def update_stats(stats: StatsUpdate, user: dict = Depends(verify_token)):
     conn.close()
     return {"message": "更新成功"}
 
+@app.get("/profile")
+def get_profile(user: dict = Depends(verify_token)):
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    
+    c.execute("SELECT username, nickname, avatar_url FROM users WHERE id = ?", (user["id"],))
+    row = c.fetchone()
+    conn.close()
+    
+    if not row:
+        raise HTTPException(status_code=404, detail="用户不存在")
+    
+    return {
+        "username": row[0],
+        "nickname": row[1] or row[0],  # 如果没有昵称，返回用户名
+        "avatarUrl": row[2]
+    }
+
+@app.put("/profile")
+def update_profile(profile: ProfileUpdate, user: dict = Depends(verify_token)):
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    
+    updates = []
+    values = []
+    
+    if profile.nickname is not None:
+        updates.append("nickname = ?")
+        values.append(profile.nickname)
+    if profile.avatarUrl is not None:
+        updates.append("avatar_url = ?")
+        values.append(profile.avatarUrl)
+    
+    if updates:
+        values.append(user["id"])
+        c.execute(f"UPDATE users SET {', '.join(updates)} WHERE id = ?", values)
+        conn.commit()
+    
+    conn.close()
+    return {"message": "更新成功"}
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=7860)
+

@@ -1,7 +1,8 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { UserStats, View, Meal } from '../types';
-import { authApi } from '../services/apiService';
+import { authApi, profileApi } from '../services/apiService';
+import EditProfile from '../components/EditProfile';
 
 interface ProfileProps {
   stats: UserStats;
@@ -13,7 +14,30 @@ interface ProfileProps {
 }
 
 const Profile: React.FC<ProfileProps> = ({ stats, meals, setView, isLoggedIn = false, onLogout, onLoginClick }) => {
-  const username = authApi.getUsername();
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [nickname, setNickname] = useState('');
+  const [avatarUrl, setAvatarUrl] = useState('');
+
+  // 加载用户资料
+  useEffect(() => {
+    if (isLoggedIn) {
+      loadProfile();
+    }
+  }, [isLoggedIn]);
+
+  const loadProfile = async () => {
+    try {
+      const profile = await profileApi.get();
+      setNickname(profile.nickname || authApi.getUsername() || '用户');
+      setAvatarUrl(profile.avatarUrl || '');
+    } catch (err) {
+      console.error('加载资料失败:', err);
+      setNickname(authApi.getUsername() || '用户');
+    }
+  };
+
+  const displayName = isLoggedIn ? nickname : '访客用户';
+  const displayAvatar = avatarUrl || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(displayName) + '&background=9eb7a5&color=fff&size=200';
 
   // Simple calculation for average calories based on history (mocked logic)
   const avgCalories = meals.length > 0
@@ -22,6 +46,13 @@ const Profile: React.FC<ProfileProps> = ({ stats, meals, setView, isLoggedIn = f
 
   return (
     <div className="bg-surface-light min-h-screen pb-28">
+      {/* Edit Profile Modal */}
+      <EditProfile
+        isOpen={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        onSave={loadProfile}
+      />
+
       <header className="bg-[#FFF9E6] rounded-b-[2.5rem] shadow-soft pt-14 pb-8 px-4 relative overflow-hidden">
         {/* Decorative elements */}
         <div className="absolute -top-20 -right-20 w-80 h-80 bg-primary/10 rounded-full blur-3xl pointer-events-none"></div>
@@ -29,19 +60,28 @@ const Profile: React.FC<ProfileProps> = ({ stats, meals, setView, isLoggedIn = f
 
         <div className="relative z-10 flex flex-col items-center gap-6">
           <div className="flex flex-col items-center gap-3">
-            <div className="relative group cursor-pointer active:scale-95 transition-transform">
+            <div
+              className="relative group cursor-pointer active:scale-95 transition-transform"
+              onClick={() => isLoggedIn && setShowEditModal(true)}
+            >
               <div
                 className="w-28 h-28 rounded-full border-[6px] border-white shadow-lg bg-cover bg-center"
-                style={{ backgroundImage: `url('https://lh3.googleusercontent.com/aida-public/AB6AXuASsU2GS0Bsnyham00p7UFY_vsCMV2PfUWxL62eK72LnINs33gMk4BEndIwNR_yhDMKSLN8dz6OF1EmXuaSTA-cUqDF7BEKclZzmSY3mS0Gjoj7HNxf4Zbt962Yc1LNHT1_3hEqzANgybWkMcpxWbfD5wzp4QWoQlsrd3bjNIMjUaD0kOBfT6nLREiD5xcrWHxDqjW1DeWXj9FFsD_IGamm0hbLnRiKBz9TqWLQBLoEppgIQqIVBwBjexAgFkPnKLJJonqN5uBbvQU')` }}
+                style={{ backgroundImage: `url('${displayAvatar}')` }}
               />
-              <div className="absolute bottom-1 right-1 bg-primary text-white rounded-full p-2 border-4 border-white shadow-sm">
-                <span className="material-symbols-outlined text-[16px] font-bold">edit</span>
-              </div>
+              {isLoggedIn && (
+                <div className="absolute bottom-1 right-1 bg-primary text-white rounded-full p-2 border-4 border-white shadow-sm">
+                  <span className="material-symbols-outlined text-[16px] font-bold">edit</span>
+                </div>
+              )}
             </div>
             <div className="text-center">
-              <h1 className="text-2xl font-extrabold text-text-main">Sarah Zhang</h1>
+              <h1 className="text-2xl font-extrabold text-text-main">{displayName}</h1>
               <div className="flex items-center gap-2 justify-center mt-1">
-                <span className="px-2 py-0.5 bg-primary/20 text-primary-dark text-[10px] font-bold rounded-full uppercase tracking-wider">Pro Member</span>
+                {isLoggedIn ? (
+                  <span className="px-2 py-0.5 bg-primary/20 text-primary-dark text-[10px] font-bold rounded-full uppercase tracking-wider">已登录</span>
+                ) : (
+                  <span className="px-2 py-0.5 bg-gray-200 text-gray-600 text-[10px] font-bold rounded-full uppercase tracking-wider">未登录</span>
+                )}
                 <p className="text-text-muted text-sm font-medium">健康达人</p>
               </div>
             </div>
@@ -109,7 +149,7 @@ const Profile: React.FC<ProfileProps> = ({ stats, meals, setView, isLoggedIn = f
             onClick={onLogout}
             className="mx-2 py-4 rounded-2xl bg-red-50 text-red-500 font-bold text-sm hover:bg-red-100 transition mb-4"
           >
-            退出登录 ({username})
+            退出登录 ({displayName})
           </button>
         ) : (
           <button

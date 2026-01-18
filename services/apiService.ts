@@ -126,3 +126,21 @@ export const statsApi = {
         });
     },
 };
+
+// 用户资料 API
+export const profileApi = {
+    get: async () => {
+        return apiRequest('/profile');
+    },
+
+    update: async (profile: {
+        nickname?: string;
+        avatarUrl?: string;
+    }) => {
+        return apiRequest('/profile', {
+            method: 'PUT',
+            body: JSON.stringify(profile),
+        });
+    },
+};
+
