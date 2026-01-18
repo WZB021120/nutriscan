@@ -126,6 +126,14 @@ const App: React.FC = () => {
   };
 
   const addMeal = async (result: AnalysisResult, imageUrl: string) => {
+    // 防御性检查
+    if (!result || !result.name || result.calories === undefined) {
+      console.error('addMeal: 无效的结果对象', result);
+      setCurrentView('home');
+      setPendingAnalysis(null);
+      return;
+    }
+
     const newMeal: Meal = {
       id: Date.now().toString(),
       name: result.name,
@@ -135,7 +143,7 @@ const App: React.FC = () => {
       macros: result.macros,
       imageUrl: imageUrl,
       insight: result.insight,
-      createdAt: new Date().toISOString().split('T')[0] // 添加日期字段
+      createdAt: new Date().toISOString().split('T')[0]
     };
 
     // 本地更新

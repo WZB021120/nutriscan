@@ -173,7 +173,14 @@ const Analysis: React.FC<AnalysisProps> = ({ result, imageUrl, imageBase64, onCo
 
       <div className="fixed bottom-0 left-0 w-full z-40 px-6 py-6 bg-white/80 backdrop-blur-sm flex justify-center">
         <button
-          onClick={() => onConfirm(currentResult)}
+          onClick={() => {
+            console.log('确认添加, currentResult:', currentResult);
+            if (currentResult && currentResult.name) {
+              onConfirm(currentResult);
+            } else {
+              console.error('currentResult 无效');
+            }
+          }}
           className="w-full max-w-md h-14 bg-primary text-white rounded-2xl font-bold text-lg shadow-float flex items-center justify-center gap-2"
         >
           <span className="material-symbols-outlined">add</span>
