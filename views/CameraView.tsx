@@ -254,7 +254,7 @@ const CameraView: React.FC<CameraViewProps> = ({ onCaptured, onClose }) => {
       </div>
 
       {/* Bottom Controls */}
-      <div className="relative z-10 flex flex-col w-full px-8 pb-10 pt-4">
+      <div className="relative z-10 flex flex-col w-full px-8 pt-4" style={{ paddingBottom: 'calc(40px + env(safe-area-inset-bottom, 20px))' }}>
         {capturedImage ? (
           // 已拍照状态：显示重拍按钮
           <div className="flex items-center justify-center">
