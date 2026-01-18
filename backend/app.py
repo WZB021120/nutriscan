@@ -23,8 +23,17 @@ app.add_middleware(
 
 security = HTTPBearer()
 
-# 数据库路径
-DB_PATH = os.environ.get("DB_PATH", "nutriscan.db")
+# 数据库路径 - 优先使用 Hugging Face 的持久化目录
+def get_db_path():
+    # Hugging Face Spaces 持久化目录
+    persistent_dir = "/data"
+    if os.path.exists(persistent_dir) and os.access(persistent_dir, os.W_OK):
+        return os.path.join(persistent_dir, "nutriscan.db")
+    # 回退到环境变量或当前目录
+    return os.environ.get("DB_PATH", "nutriscan.db")
+
+DB_PATH = get_db_path()
+print(f"数据库路径: {DB_PATH}")
 
 # 初始化数据库
 def init_db():

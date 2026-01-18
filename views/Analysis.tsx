@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AnalysisResult } from '../types';
 import { correctFoodAnalysis } from '../services/geminiService';
 
@@ -15,8 +15,15 @@ const Analysis: React.FC<AnalysisProps> = ({ result, imageUrl, imageBase64, onCo
   const [isEditing, setIsEditing] = useState(false);
   const [userInput, setUserInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [currentResult, setCurrentResult] = useState(result);
+  const [currentResult, setCurrentResult] = useState<AnalysisResult>(result);
   const [error, setError] = useState<string | null>(null);
+
+  // 同步 props 到 state（防止 props 变化时 state 不更新）
+  useEffect(() => {
+    if (result && result.name) {
+      setCurrentResult(result);
+    }
+  }, [result]);
 
   // 处理修正请求
   const handleCorrection = async () => {
