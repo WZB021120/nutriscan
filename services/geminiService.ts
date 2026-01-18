@@ -113,3 +113,78 @@ export const analyzeFoodImage = async (base64Image: string, retryCount = 0): Pro
     throw new Error("AI 分析遇到了问题，请重新拍摄。");
   }
 };
+
+// 根据用户描述修正食物分析结果
+export const correctFoodAnalysis = async (
+  base64Image: string,
+  userCorrection: string,
+  previousResult: AnalysisResult
+): Promise<AnalysisResult> => {
+  console.log("开始修正分析, 用户输入:", userCorrection);
+
+  try {
+    const requestBody = {
+      model: "qwen3-vl-plus",
+      stream: false,
+      messages: [
+        {
+          role: "user",
+          content: [
+            {
+              type: "image_url",
+              image_url: {
+                url: `data:image/jpeg;base64,${base64Image}`,
+              },
+            },
+            {
+              type: "text",
+              text: `之前识别这张图片的结果是：
+名称: ${previousResult.name}
+卡路里: ${previousResult.calories}
+蛋白质: ${previousResult.macros.protein}g, 碳水: ${previousResult.macros.carbs}g, 脂肪: ${previousResult.macros.fat}g
+
+用户认为识别有误，给出修正信息: "${userCorrection}"
+
+请根据用户的修正信息重新分析这张图片，返回修正后的JSON格式：
+{"name":"名称","calories":数字,"macros":{"protein":数字,"carbs":数字,"fat":数字},"insight":"建议emoji"}
+只返回JSON，不要其他文字。`,
+            },
+          ],
+        },
+      ],
+      temperature: 0.5,
+      max_tokens: 1024,
+    };
+
+    const response = await fetch(`${API_BASE_URL}/chat/completions`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${API_KEY}`,
+      },
+      body: JSON.stringify(requestBody),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`API 请求失败 (${response.status}): ${errorText.slice(0, 200)}`);
+    }
+
+    const data = await response.json();
+    const content = data.choices?.[0]?.message?.content;
+
+    if (!content) {
+      throw new Error("API response was empty");
+    }
+
+    console.log("修正后的原始内容:", content);
+    return parseJsonResponse(content);
+
+  } catch (error) {
+    console.error("修正分析失败:", error);
+    if (error instanceof Error) {
+      throw new Error(`修正失败: ${error.message}`);
+    }
+    throw new Error("修正分析遇到问题，请重试。");
+  }
+};

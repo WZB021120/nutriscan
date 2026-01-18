@@ -5,7 +5,7 @@ import { AnalysisResult } from '../types';
 import { ScanningOverlay } from '../components/ScanningOverlay';
 
 interface CameraViewProps {
-  onCaptured: (result: AnalysisResult, image: string) => void;
+  onCaptured: (result: AnalysisResult, image: string, base64: string) => void;
   onClose: () => void;
 }
 
@@ -111,7 +111,7 @@ const CameraView: React.FC<CameraViewProps> = ({ onCaptured, onClose }) => {
     setIsAnalyzing(true);
     try {
       const result = await analyzeFoodImage(base64String);
-      onCaptured(result, dataUrl);
+      onCaptured(result, dataUrl, base64String);
     } catch (err) {
       alert(err instanceof Error ? err.message : "分析失败，请稍后重试");
       // 分析失败，重新启动摄像头
@@ -147,7 +147,7 @@ const CameraView: React.FC<CameraViewProps> = ({ onCaptured, onClose }) => {
       setIsAnalyzing(true);
       try {
         const result = await analyzeFoodImage(base64String);
-        onCaptured(result, dataUrl);
+        onCaptured(result, dataUrl, base64String);
       } catch (err) {
         alert(err instanceof Error ? err.message : "分析失败，请稍后重试");
         setCapturedImage(null);

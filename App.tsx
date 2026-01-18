@@ -43,7 +43,7 @@ const App: React.FC = () => {
     }
   });
 
-  const [pendingAnalysis, setPendingAnalysis] = useState<{ result: AnalysisResult; image: string } | null>(null);
+  const [pendingAnalysis, setPendingAnalysis] = useState<{ result: AnalysisResult; image: string; base64: string } | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile>({ nickname: '', avatarUrl: '' });
 
   // 从后端同步数据
@@ -211,8 +211,8 @@ const App: React.FC = () => {
       case 'camera':
         return (
           <CameraView
-            onCaptured={(result, image) => {
-              setPendingAnalysis({ result, image });
+            onCaptured={(result, image, base64) => {
+              setPendingAnalysis({ result, image, base64 });
               setCurrentView('analysis');
             }}
             onClose={() => setCurrentView('home')}
@@ -223,8 +223,12 @@ const App: React.FC = () => {
           <Analysis
             result={pendingAnalysis.result}
             imageUrl={pendingAnalysis.image}
+            imageBase64={pendingAnalysis.base64}
             onConfirm={() => addMeal(pendingAnalysis.result, pendingAnalysis.image)}
             onClose={() => setCurrentView('home')}
+            onResultUpdate={(newResult) => {
+              setPendingAnalysis(prev => prev ? { ...prev, result: newResult } : null);
+            }}
           />
         ) : <Dashboard stats={stats} meals={meals} setView={setCurrentView} />;
       case 'profile':
