@@ -22,17 +22,6 @@
 - 📈 后端 API 返回 `createdAt` 字段支持历史记录筛选
 - 📈 统计数据只计算有记录的天数，避免空数据干扰
 
-### 代码质量
-- 🛠 添加 ESLint 配置文件 (`.eslintrc.json`)
-- 🛠 添加 `@types/react` 和 `@types/react-dom` 类型定义
-- 🛠 添加 `npm run lint` 和 `npm run typecheck` 命令
-- 🛠 后端添加 `bcrypt` 依赖准备密码安全升级
-
-### 文档更新
-- 📝 更新 README.md 添加新功能说明
-- 📝 添加版本号徽章
-- 📝 创建 CHANGELOG.md 记录更新历史
-
 ---
 
 ## [0.0.0] - 初始版本
